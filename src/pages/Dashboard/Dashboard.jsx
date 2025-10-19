@@ -2,8 +2,6 @@ import React, { useEffect, useState } from "react";
 import { db } from "../../config/firebase";
 import {
   collection,
-  query,
-  where,
   getDocs,
   deleteDoc,
   doc,
@@ -45,24 +43,17 @@ const Dashboard = () => {
     }
   };
 
-  // ✅ Regenerate pitch with AI
+  // ✅ Regenerate pitch
   const handleRegenerate = async (pitch) => {
     setRegeneratingId(pitch.id);
     try {
       const newPitch = await generatePitch(pitch.idea);
-
-      // Update Firestore
-      await updateDoc(doc(db, "pitches", pitch.id), {
-        result: newPitch,
-      });
-
-      // Update local state
+      await updateDoc(doc(db, "pitches", pitch.id), { result: newPitch });
       setPitches((prev) =>
         prev.map((p) =>
           p.id === pitch.id ? { ...p, result: newPitch } : p
         )
       );
-
       alert("Pitch regenerated successfully ✅");
     } catch (error) {
       console.error("Error regenerating:", error);
@@ -78,73 +69,99 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen text-indigo-600 font-semibold text-xl">
-        Loading your pitches...
+      <div className="flex justify-center items-center h-screen bg-gradient-to-br from-indigo-50 to-white text-indigo-600 font-semibold text-xl">
+        ⚙️ Loading your pitches...
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-10 px-6">
-        <Navbar />
-      <div className="max-w-5xl mx-auto">
-        <h1 className="text-3xl font-bold text-indigo-600 mb-6 text-center">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-indigo-100">
+      <Navbar />
+
+      <div className="max-w-6xl mx-auto py-12 px-6">
+        <h1 className="text-3xl md:text-4xl font-bold text-indigo-700 text-center mb-10">
           🧩 Your Saved Pitches
         </h1>
 
         {pitches.length === 0 ? (
-          <p className="text-center text-gray-600">
-            No pitches yet! Go to{" "}
-            <span className="text-indigo-500 font-semibold">Create Pitch</span>{" "}
-            page and make your first one.
-          </p>
+          <div className="text-center py-20">
+            <img
+              src="https://cdn3d.iconscout.com/3d/premium/thumb/empty-box-3d-icon-download-in-png-blend-fbx-gltf-file-formats--out-of-stock-store-package-pack-e-commerce-logistics-illustrations-5164733.png"
+              alt="Empty"
+              className="w-48 mx-auto mb-6 opacity-80"
+            />
+            <h2 className="text-xl font-semibold text-gray-600 mb-2">
+              No Pitches Found 😕
+            </h2>
+            <p className="text-gray-500 mb-6">
+              Start creating your first AI-powered startup pitch now!
+            </p>
+            <a
+              href="/create"
+              className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-indigo-700 transition-all"
+            >
+              ⚡ Create New Pitch
+            </a>
+          </div>
         ) : (
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {pitches.map((pitch) => (
               <div
                 key={pitch.id}
-                className="bg-white shadow-md rounded-2xl p-5 border border-gray-100 hover:shadow-lg transition-all duration-200"
+                className="bg-white/80 backdrop-blur-sm shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 rounded-2xl p-6 flex flex-col justify-between"
               >
+                {/* Image */}
                 {pitch.imageURL && (
                   <img
                     src={pitch.imageURL}
                     alt="Logo"
-                    className="w-20 h-20 object-cover rounded-md mb-3"
+                    className="w-20 h-20 object-cover rounded-lg mx-auto mb-4 shadow-sm"
                   />
                 )}
-                <h2 className="text-xl font-semibold text-indigo-600 mb-2">
-                  {pitch.result.startupName}
-                </h2>
-                <p className="text-gray-700 mb-1">
-                  <strong>Tagline:</strong> {pitch.result.tagline}
-                </p>
-                <p className="text-gray-700 mb-1">
-                  <strong>Pitch:</strong> {pitch.result.pitch}
-                </p>
-                <p className="text-gray-700 mb-2">
-                  <strong>Audience:</strong> {pitch.result.targetAudience}
-                </p>
 
-                <div className="flex justify-between items-center mt-4">
+                {/* Details */}
+                <div>
+                  <h2 className="text-xl font-bold text-indigo-600 mb-2 text-center">
+                    {pitch.result?.startupName || "Untitled Startup"}
+                  </h2>
+                  <p className="text-sm italic text-gray-500 text-center mb-3">
+                    "{pitch.result?.tagline || "No tagline"}"
+                  </p>
+                  <p className="text-gray-700 text-sm mb-2">
+                    <strong>Pitch:</strong> {pitch.result?.pitch}
+                  </p>
+                  <p className="text-gray-700 text-sm mb-4">
+                    <strong>Audience:</strong> {pitch.result?.targetAudience}
+                  </p>
+                </div>
+
+                {/* Buttons */}
+                <div className="flex justify-between items-center mt-auto pt-3 border-t border-gray-200">
                   <button
                     onClick={() => handleRegenerate(pitch)}
                     disabled={regeneratingId === pitch.id}
-                    className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 text-sm"
+                    className={`px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all ${
+                      regeneratingId === pitch.id
+                        ? "bg-gray-400"
+                        : "bg-indigo-600 hover:bg-indigo-700"
+                    }`}
                   >
                     {regeneratingId === pitch.id
                       ? "Regenerating..."
-                      : "♻️ Regenerate Pitch"}
+                      : "♻️ Regenerate"}
                   </button>
 
                   <button
                     onClick={() => handleDelete(pitch.id)}
-                    className="text-red-500 font-medium hover:text-red-600 text-sm"
+                    className="text-red-500 hover:text-red-600 text-sm font-medium"
                   >
-                    Delete
+                    🗑 Delete
                   </button>
                 </div>
 
-                <p className="text-xs text-gray-400 mt-2">
+                {/* Timestamp */}
+                <p className="text-xs text-gray-400 mt-3 text-center">
                   {pitch.createdAt?.toDate
                     ? pitch.createdAt.toDate().toLocaleString()
                     : ""}
