@@ -1,32 +1,85 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+// ✅ Initialize Gemini AI
 const genAI = new GoogleGenerativeAI("AIzaSyDTOsMfUo-IznRUOdQLevnHEIKwZIKYlfk");
 
+// ============================================================
+// 🧠 1. Generate a startup pitch (JSON format)
+// ============================================================
 export const generatePitch = async (idea) => {
   const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
   const prompt = `
-You are an AI startup pitch generator.
-User idea: "${idea}"
+You are an expert startup advisor. Based on this idea:
+"${idea}"
 
-Generate a clean JSON object with the following keys only:
-startupName, tagline, pitch, targetAudience, colorPaletteIdea
-Do not include markdown or code fences. Just return pure JSON.
+Generate a concise, creative, and structured startup pitch in valid JSON format.
+Return only JSON with these keys:
+{
+  "startupName": "string",
+  "tagline": "string",
+  "pitch": "string",
+  "targetAudience": "string",
+  "colorPaletteIdea": "string"
+}
+  
+
 `;
 
-  const result = await model.generateContent(prompt);
-  const rawText = await result.response.text();
+  try {
+    const result = await model.generateContent(prompt);
+    const text = await result.response.text();
+    const clean = text.replace(/```json|```/g, "").trim();
+    return JSON.parse(clean);
+  } catch (error) {
+    console.error("Gemini JSON Error:", error);
+    return {
+      startupName: "AI Startup",
+      tagline: "Empowering innovation with AI",
+      pitch: "Your pitch could not be generated. Try again.",
+      targetAudience: "Entrepreneurs",
+      colorPaletteIdea: "Blue, White, Purple",
+    };
+  }
+};
 
-  // 🧹 Clean the response to remove any extra backticks or 'json' words
-  const cleanText = rawText
-    .replace(/```json|```/g, "") // remove markdown fences
-    .trim();
+// ============================================================
+// 💻 2. Generate Landing Page HTML + CSS Code
+// ============================================================
+export const generateLandingPageCode = async (pitchData) => {
+  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+
+  const prompt = `
+You are a professional web developer.
+Create a **complete responsive landing page (HTML + CSS)** for this startup:
+
+Startup Name: ${pitchData.startupName}
+Tagline: ${pitchData.tagline}
+Pitch: ${pitchData.pitch}
+Target Audience: ${pitchData.targetAudience}
+Color Palette: ${pitchData.colorPaletteIdea}
+
+Page Requirements:
+1. Fully responsive, modern design
+2. Hero section with title, subtitle, and CTA button
+3. Features / Benefits section
+4. Problem & Solution section
+5. About section
+6. Call To Action / Contact section
+7. Use clean, modern typography
+8. Add smooth hover animations & transitions
+9. Use inline <style> CSS inside the same HTML file
+10. Return ONLY HTML code — no markdown or explanations.
+`;
 
   try {
-    return JSON.parse(cleanText);
-  } catch (err) {
-    console.error("JSON Parse Error:", err, "\nRaw response:", cleanText);
-    // Fallback: return text as plain string if parsing fails
-    return { startupName: "Error", tagline: "Invalid JSON format", pitch: cleanText };
+    const result = await model.generateContent(prompt);
+    let code = await result.response.text();
+    // Clean markdown formatting
+    code = code.replace(/```html|```/g, "").trim();
+    return code;
+  } catch (error) {
+    console.error("Gemini HTML Error:", error);
+    return "<h1>Failed to generate landing page. Please try again.</h1>";
   }
 };

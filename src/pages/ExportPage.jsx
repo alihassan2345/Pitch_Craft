@@ -1,48 +1,53 @@
 import React, { useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
+import { useAuth } from "../context/AuthContext";
+import Navbar from "../components/Navbar";
 
 const ExportPage = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const pitchData = location.state?.pitch || null;
   const [loading, setLoading] = useState(false);
 
+  // ✅ Handle PDF Download
   const downloadPDF = () => {
     if (!pitchData) return alert("No pitch data found!");
     setLoading(true);
 
     const doc = new jsPDF();
 
-    // 🧾 Title Section
+    // 🧾 Header
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(20);
+    doc.setFontSize(22);
     doc.text("PitchCraft - AI Startup Pitch", 14, 20);
 
-    // 🎯 Info Section
+    // 🎯 Info
     doc.setFontSize(12);
     doc.setFont("helvetica", "normal");
     doc.text(`Startup Name: ${pitchData.startupName}`, 14, 40);
     doc.text(`Tagline: ${pitchData.tagline}`, 14, 50);
 
-    // 🧩 Pitch Section
+    // 🧩 Pitch
     doc.setFont("helvetica", "bold");
     doc.text("Pitch:", 14, 65);
     doc.setFont("helvetica", "normal");
     doc.text(doc.splitTextToSize(pitchData.pitch, 180), 14, 72);
 
-    // 👥 Audience Section
+    // 👥 Audience
     doc.setFont("helvetica", "bold");
-    doc.text("Target Audience:", 14, 105);
+    doc.text("Target Audience:", 14, 115);
     doc.setFont("helvetica", "normal");
-    doc.text(doc.splitTextToSize(pitchData.targetAudience, 180), 14, 112);
+    doc.text(doc.splitTextToSize(pitchData.targetAudience, 180), 14, 122);
 
-    // 🎨 Color Palette Idea
+    // 🎨 Palette
     if (pitchData.colorPaletteIdea) {
       doc.setFont("helvetica", "bold");
-      doc.text("Color Palette Idea:", 14, 145);
+      doc.text("Color Palette Idea:", 14, 155);
       doc.setFont("helvetica", "normal");
-      doc.text(doc.splitTextToSize(pitchData.colorPaletteIdea, 180), 14, 152);
+      doc.text(doc.splitTextToSize(pitchData.colorPaletteIdea, 180), 14, 162);
     }
 
     // 📅 Footer
@@ -53,104 +58,136 @@ const ExportPage = () => {
     setLoading(false);
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-indigo-100 flex flex-col items-center justify-center px-4 py-10">
-      <div className="w-full max-w-3xl bg-white/70 backdrop-blur-lg border border-gray-100 shadow-2xl rounded-3xl p-8 text-center animate-fadeIn">
-        {/* 🧠 Illustration */}
-        <img
-          src="public/images-removebg-preview.png"
-          alt="AI Export"
-          className="w-40 mx-auto mb-6 drop-shadow-lg animate-float"
-        />
-
-        <h1 className="text-3xl font-bold text-indigo-700 mb-4">
-          📄 Export Your AI Pitch
-        </h1>
-        <p className="text-gray-600 mb-8 max-w-lg mx-auto">
-          Review your AI-generated pitch below and export it as a beautifully
-          formatted PDF report in one click.
+  // ✅ Redirect non-auth users
+  if (!user) {
+    return (
+      <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-400 text-white text-center px-6">
+        <h1 className="text-3xl font-bold mb-3">🔒 Access Restricted</h1>
+        <p className="text-lg text-indigo-100 mb-6">
+          Please log in to export your AI-generated pitch.
         </p>
-
-        {/* 📋 Pitch Details */}
-        {pitchData ? (
-          <>
-            <div className="text-left bg-gradient-to-br from-gray-50 to-white border border-gray-200 p-6 rounded-2xl shadow-inner mb-8 transition-all hover:shadow-md">
-              <p className="text-2xl font-bold text-indigo-700 mb-2">
-                {pitchData.startupName}
-              </p>
-              <p className="italic text-gray-500 mb-4">"{pitchData.tagline}"</p>
-              <div className="space-y-3 text-gray-700">
-                <p>
-                  <strong>🎯 Pitch:</strong> {pitchData.pitch}
-                </p>
-                <p>
-                  <strong>👥 Audience:</strong> {pitchData.targetAudience}
-                </p>
-                {pitchData.colorPaletteIdea && (
-                  <p>
-                    <strong>🎨 Color Palette:</strong>{" "}
-                    {pitchData.colorPaletteIdea}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* 🖨 Download Button */}
-            <button
-              onClick={downloadPDF}
-              disabled={loading}
-              className={`relative inline-flex items-center justify-center w-full md:w-auto px-8 py-3 font-semibold rounded-xl text-white transition-all duration-300 ${
-                loading
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-indigo-600 hover:bg-indigo-700 hover:scale-[1.02] shadow-lg"
-              }`}
-            >
-              {loading ? (
-                <span className="flex items-center gap-2">
-                  <svg
-                    className="animate-spin h-5 w-5 text-white"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8v8z"
-                    ></path>
-                  </svg>
-                  Generating PDF...
-                </span>
-              ) : (
-                "⬇️ Download as PDF"
-              )}
-            </button>
-          </>
-        ) : (
-          <div className="text-gray-600 mt-6">
-            <p className="text-lg mb-2">No pitch data to export 😕</p>
-            <a
-              href="/create"
-              className="text-indigo-600 font-semibold hover:underline"
-            >
-              Go back & create a new pitch
-            </a>
-          </div>
-        )}
+        <a
+          href="/"
+          className="bg-yellow-400 text-indigo-900 px-6 py-3 rounded-xl font-semibold hover:bg-yellow-300 transition-all shadow-lg"
+        >
+          Go to Login
+        </a>
       </div>
+    );
+  }
 
-      {/* Footer */}
-      <footer className="mt-12 text-gray-500 text-sm text-center">
-        © {new Date().getFullYear()} PitchCraft AI — Designed by Nexa ⚡
-      </footer>
+  // ✅ Fallback if pitch data missing
+  if (!pitchData) {
+    return (
+      <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-indigo-100 to-indigo-50 text-gray-700 text-center px-6">
+        <img
+          src="https://cdn3d.iconscout.com/3d/premium/thumb/empty-box-3d-icon-download-in-png-blend-fbx-gltf-file-formats--out-of-stock-store-package-pack-e-commerce-logistics-illustrations-5164733.png"
+          alt="Empty"
+          className="w-48 mb-6"
+        />
+        <h2 className="text-2xl font-bold text-indigo-700 mb-3">
+          No Pitch Data Found 😕
+        </h2>
+        <p className="mb-6 text-gray-600">
+          You can generate your startup pitch using our AI assistant.
+        </p>
+        <button
+          onClick={() => navigate("/create")}
+          className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-indigo-700 transition-all"
+        >
+          ⚡ Create a New Pitch
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-400 text-white">
+      <Navbar />
+      <div className="flex flex-col items-center justify-center px-6 py-12">
+        <div className="w-full max-w-3xl bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl rounded-3xl p-8 text-center animate-fadeIn">
+          <img
+            src="/images-removebg-preview.png"
+            alt="AI Export"
+            className="w-28 mx-auto mb-6 drop-shadow-xl animate-float"
+          />
+
+          <h1 className="text-3xl font-bold text-yellow-300 mb-4">
+            📄 Export Your AI Pitch
+          </h1>
+          <p className="text-indigo-100 mb-8 max-w-lg mx-auto">
+            Review your AI-generated startup pitch below and export it as a
+            professional, shareable PDF.
+          </p>
+
+          {/* ✅ Pitch Card */}
+          <div className="text-left bg-white/10 border border-white/20 p-6 rounded-2xl shadow-inner mb-8 hover:shadow-lg transition-all">
+            <p className="text-2xl font-bold text-yellow-300 mb-2">
+              {pitchData.startupName}
+            </p>
+            <p className="italic text-white/80 mb-4">
+              "{pitchData.tagline}"
+            </p>
+            <div className="space-y-3 text-white">
+              <p>
+                <strong>🎯 Pitch:</strong> {pitchData.pitch}
+              </p>
+              <p>
+                <strong>👥 Audience:</strong> {pitchData.targetAudience}
+              </p>
+              {pitchData.colorPaletteIdea && (
+                <p>
+                  <strong>🎨 Color Palette:</strong>{" "}
+                  {pitchData.colorPaletteIdea}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* ✅ Download Button */}
+          <button
+            onClick={downloadPDF}
+            disabled={loading}
+            className={`relative inline-flex items-center justify-center w-full md:w-auto px-8 py-3 font-semibold rounded-xl text-indigo-900 transition-all duration-300 ${
+              loading
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-yellow-400 hover:bg-yellow-300 hover:scale-[1.02] shadow-lg"
+            }`}
+          >
+            {loading ? (
+              <span className="flex items-center gap-2">
+                <svg
+                  className="animate-spin h-5 w-5 text-indigo-900"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v8z"
+                  ></path>
+                </svg>
+                Generating PDF...
+              </span>
+            ) : (
+              "⬇️ Download as PDF"
+            )}
+          </button>
+        </div>
+
+        <footer className="mt-10 text-indigo-100 text-sm text-center">
+          © {new Date().getFullYear()} PitchCraft AI — Designed by Nexa ⚡
+        </footer>
+      </div>
     </div>
   );
 };
